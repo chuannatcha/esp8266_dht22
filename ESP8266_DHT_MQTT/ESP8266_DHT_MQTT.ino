@@ -146,16 +146,18 @@ void loop()
   String temp_conv = String(temp);
   String humi_conv = String(humi);
   
-  char *str_temp = const_cast<char*>(temp_conv.c_str());
-  char *str_humi = const_cast<char*>(humi_conv.c_str());
+  String finalz = temp_conv+","+humi_conv;
   
+  //finalz.c_str();
+  Serial.println((char*) finalz.c_str());
+  
+  Serial.println(finalz);
   //Serial.println(str_temp);
   //Serial.println(str_humi);
 
   /////////////// Pubsub //////////////////////
   if (client.connected()) {
-
-    client.publish("cmmc/chuan/out",str_temp);
+    client.publish("cmmc/chuan/out", (char*) finalz.c_str());
     Serial.println("Printed");
   }
   else
