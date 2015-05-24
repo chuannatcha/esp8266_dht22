@@ -1,9 +1,11 @@
 #include <PubSubClient.h>
 #include <ESP8266WiFi.h>
+#define relay 14
 
 const char* ssid = "OpenWrt_NAT_500GP.101";
 const char* password = "activegateway";
 const byte DATA_PIN = 2;
+boolean state = 0;
 
 byte server[] = {198, 41, 30, 241};
 byte data[5];
@@ -19,11 +21,37 @@ WiFiClient wifiClient;
 PubSubClient client(server, 1883, callback, wifiClient);
 
 void callback(char* topic, byte* payload, unsigned int length) {
+  // handle message arrived
+  byte* p = (byte*)malloc(length);
+  // Copy the payload to the new buffer
+  memcpy(p,payload,length);
+  
+  char buff[5];
+  memcpy(buff, payload, length+1);
+  buff[length] = '\0';
+  
+  client.publish("outTopic", p, length);
+  client.publish("outTopic2",buff);
+  Serial.println(buff);
+  
+  if(!strcmp(buff,"1"))
+  {
+    Serial.println("open");
+    digitalWrite(relay,HIGH);  
+  }
+  else
+  {
+    Serial.println("close");
+    digitalWrite(relay,LOW);
+  }
+  // Free the memory
+  free(p);
 }
 
 void setup() {
   int wifiWaiting = 0;
   pinMode( DATA_PIN, INPUT );
+  pinMode( relay,OUTPUT);
   digitalWrite( DATA_PIN, HIGH ); // enable internal pull-up
   Serial.begin(115200);
   delay(10);
@@ -115,22 +143,26 @@ void loop()
   }
   float temp = ((data[2] << 8) | data[3]) / 10.0;
   float humi = ((data[0] << 8) | data[1]) / 10.0;
-  String a = String(temp);
+  String temp_conv = String(temp);
+  String humi_conv = String(humi);
   
-  char *nat = const_cast<char*>(a.c_str());
-  Serial.println(nat);
+  char *str_temp = const_cast<char*>(temp_conv.c_str());
+  char *str_humi = const_cast<char*>(humi_conv.c_str());
+  
+  //Serial.println(str_temp);
+  //Serial.println(str_humi);
 
   /////////////// Pubsub //////////////////////
   if (client.connected()) {
 
-    client.publish("cmmc/chuan/out",nat);
+    client.publish("cmmc/chuan/out",str_temp);
     Serial.println("Printed");
   }
   else
   {
     Serial.println("Connect have a problem");
     client.connect("arduinoClient");
-    //client.subscribe("cmmc/chuan/in");
+    client.subscribe("cmmc/chuan/in");
   }
   delay(1000);
 }
