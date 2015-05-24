@@ -115,7 +115,7 @@ void loop()
   }
   float temp = ((data[2] << 8) | data[3]) / 10.0;
   float humi = ((data[0] << 8) | data[1]) / 10.0;
-  String a = String(30.5);
+  String a = String(temp);
   
   char *nat = const_cast<char*>(a.c_str());
   Serial.println(nat);
@@ -123,7 +123,7 @@ void loop()
   /////////////// Pubsub //////////////////////
   if (client.connected()) {
 
-    client.publish("cmmc/chuan/out", "test");
+    client.publish("cmmc/chuan/out",nat);
     Serial.println("Printed");
   }
   else
